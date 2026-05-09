@@ -1,6 +1,6 @@
 # CloakBrowser-Manager API Reference
 
-Complete REST API reference. Base URL: `http://localhost:8970`
+Complete REST API reference. Base URL: `http://<host>:<port>` (user-configured, default `http://localhost:8080`)
 
 ## Table of Contents
 

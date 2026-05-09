@@ -1,6 +1,6 @@
 ---
 name: cloakbrowser-manager
-description: "Manage CloakBrowser-Manager browser profiles and automate tasks via its REST API and CDP. Use this skill whenever the user mentions CloakBrowser, CloakBrowser-Manager, browser profiles, browser fingerprints, anti-detect browsers, multi-account browser management, stealth browsing, or wants to create/launch/stop/configure isolated browser instances. Also trigger when the user wants to connect Playwright or Puppeteer to a running CloakBrowser profile, write automation scripts that target CloakBrowser, or manage proxies/fingerprints/timezones across multiple browser profiles. Even if the user just says 'launch a browser profile', 'create a new profile with proxy', 'connect to my running browser', or 'write a scraper using my browser profiles', this skill should activate. 中文触发词：CloakBrowser 浏览器指纹、反检测浏览器、多账号浏览器管理、浏览器 profile 管理、CDP 端点连接、配置代理/时区/locale、批量创建 profile、localhost:8970、/api/profiles。"
+description: "Manage CloakBrowser-Manager browser profiles and automate tasks via its REST API and CDP. Use this skill whenever the user mentions CloakBrowser, CloakBrowser-Manager, browser profiles, browser fingerprints, anti-detect browsers, multi-account browser management, stealth browsing, or wants to create/launch/stop/configure isolated browser instances. Also trigger when the user wants to connect Playwright or Puppeteer to a running CloakBrowser profile, write automation scripts that target CloakBrowser, or manage proxies/fingerprints/timezones across multiple browser profiles. Even if the user just says 'launch a browser profile', 'create a new profile with proxy', 'connect to my running browser', or 'write a scraper using my browser profiles', this skill should activate. 中文触发词：CloakBrowser 浏览器指纹、反检测浏览器、多账号浏览器管理、浏览器 profile 管理、CDP 端点连接、配置代理/时区/locale、批量创建 profile、/api/profiles。"
 ---
 
 # CloakBrowser-Manager Skill
@@ -9,13 +9,15 @@ Operate a locally-running CloakBrowser-Manager instance: manage browser profiles
 
 ## Environment
 
-The user runs CloakBrowser-Manager via Docker Compose on **localhost:8970**. The base URL for all API calls is:
+Before executing any API call, ask the user for their CloakBrowser-Manager address if not already known. Common setups:
 
-```
-http://localhost:8970
-```
+- Local Docker: `http://localhost:8080` (default port)
+- Custom port: `http://localhost:<port>` (user specifies)
+- Remote server: `http://<host>:<port>` (with optional AUTH_TOKEN)
 
-No authentication is configured for local use. If the user mentions an AUTH_TOKEN, pass it as `Authorization: Bearer <token>` header.
+Use the confirmed address as `BASE_URL` throughout all commands and scripts. If the user has previously mentioned their address in the conversation, reuse it without asking again.
+
+If the user mentions an AUTH_TOKEN, pass it as `Authorization: Bearer <token>` header on all API requests.
 
 ## Quick Reference — API Endpoints
 
@@ -98,13 +100,15 @@ Only `name` is required for creation. All other fields have sensible defaults.
 ### 1. Create and launch a profile
 
 ```bash
+BASE_URL="http://localhost:8080"  # ← replace with user's actual address
+
 # Create
-curl -s -X POST http://localhost:8970/api/profiles \
+curl -s -X POST ${BASE_URL}/api/profiles \
   -H "Content-Type: application/json" \
   -d '{"name": "Worker-1", "proxy": "socks5://user:pass@proxy.example.com:1080", "timezone": "Europe/London", "locale": "en-GB", "platform": "windows"}' | jq .id
 
 # Launch (use the returned ID)
-curl -s -X POST http://localhost:8970/api/profiles/<profile-id>/launch | jq
+curl -s -X POST ${BASE_URL}/api/profiles/<profile-id>/launch | jq
 ```
 
 ### 2. Batch create profiles
@@ -119,10 +123,12 @@ After a profile is launched, connect to it via CDP:
 from playwright.async_api import async_playwright
 import asyncio
 
+BASE_URL = "http://localhost:8080"  # ← replace with user's actual address
+
 async def main():
     async with async_playwright() as pw:
         browser = await pw.chromium.connect_over_cdp(
-            "http://localhost:8970/api/profiles/<profile-id>/cdp"
+            f"{BASE_URL}/api/profiles/<profile-id>/cdp"
         )
         context = browser.contexts[0]
         page = context.pages[0]
@@ -137,9 +143,11 @@ asyncio.run(main())
 ```javascript
 const { chromium } = require("playwright");
 
+const BASE_URL = "http://localhost:8080"; // ← replace with user's actual address
+
 (async () => {
   const browser = await chromium.connectOverCDP(
-    "http://localhost:8970/api/profiles/<profile-id>/cdp"
+    `${BASE_URL}/api/profiles/<profile-id>/cdp`
   );
   const context = browser.contexts()[0];
   const page = context.pages()[0];
@@ -157,7 +165,7 @@ import asyncio
 import httpx
 from playwright.async_api import async_playwright
 
-BASE = "http://localhost:8970"
+BASE = "http://localhost:8080"  # ← replace with user's actual address
 
 async def run_task(pw, profile_id: str, url: str):
     browser = await pw.chromium.connect_over_cdp(f"{BASE}/api/profiles/{profile_id}/cdp")
@@ -191,8 +199,8 @@ asyncio.run(main())
 
 - A profile must be **stopped** before it can be deleted or have its settings changed.
 - Each running profile uses ~512 MB RAM. Plan resource allocation accordingly.
-- The VNC viewer is accessible in the web GUI at `http://localhost:8970` — each running profile shows a live browser view.
-- CDP URL format: `http://localhost:8970/api/profiles/{id}/cdp` — this is the URL you pass to `connect_over_cdp()`.
+- The VNC viewer is accessible in the web GUI at `BASE_URL` — each running profile shows a live browser view.
+- CDP URL format: `{BASE_URL}/api/profiles/{id}/cdp` — this is the URL you pass to `connect_over_cdp()`.
 - Proxy formats accepted: `http://user:pass@host:port`, `socks5://host:port`, or shorthand `host:port:user:pass`.
 - When checking if a profile is running, use the `status` field from GET `/api/profiles` (returns `"running"` or `"stopped"`) or GET `/api/profiles/{id}/status`.
 
