@@ -1,0 +1,26 @@
+{
+  "skill_name": "cloakbrowser-manager",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "帮我创建一个浏览器 profile，用 socks5 代理 socks5://admin:pass123@proxy.example.com:1080，模拟英国 Windows 用户，然后启动它",
+      "expected_output": "应该输出正确的 curl 命令或脚本来创建 profile（包含 proxy、timezone Europe/London、locale en-GB、platform windows），然后调用 launch 端点启动",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 1,
+      "prompt": "我需要创建 5 个 profile，每个用不同的代理和时区，用于社交媒体多账号管理，写个 Python 脚本帮我自动化创建和启动",
+      "expected_output": "应该生成一个完整的 Python 脚本，使用 httpx 或 requests 调用 CloakBrowser-Manager API，循环创建 5 个 profile 并启动，每个有不同的代理和时区配置",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 2,
+      "prompt": "写一个 Node.js 脚本，连接到我正在运行的 CloakBrowser profile，访问 https://example.com 并截图保存到 screenshot.png",
+      "expected_output": "应该生成 Node.js 脚本，使用 playwright 的 connectOverCDP 连接到 CloakBrowser profile 的 CDP 端点 http://localhost:8970/api/profiles/<id>/cdp，导航到页面并截图",
+      "files": [],
+      "assertions": []
+    }
+  ]
+}
